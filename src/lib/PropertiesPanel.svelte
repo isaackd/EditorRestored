@@ -1,25 +1,25 @@
 <script lang="ts">
-    import type { IAnnotation } from "./Annotation.svelte";
+    import type { AnnotationTrackItem } from "./Annotation.svelte";
     import { formatSeconds } from "./common";
 
-    export let annotations: Array<IAnnotation>;
+    export let annotationItems: Array<AnnotationTrackItem>;
 
-    $: selectedAnnotation = annotations.find(el => {
-        console.log(annotations);
+    $: selectedAnnotationItem = annotationItems.find(el => {
         return el.selected === true;
     });
 </script>
 
+{#if selectedAnnotationItem}
 <div id="properties-panel">
     <div id="content">
         <h2>Properties</h2>
 
-        {#if selectedAnnotation}
+        <!-- {#if selectedAnnotationItem} -->
         <span>Annotation Type</span>
         <select name="annotation-type" id="">
             <option value="text">Text</option>
             <option value="note">Note</option>
-            <option value="speech">Speech Bubble</option>
+            <option value="speech">Speech</option>
             <option value="title">Title</option>
             <option value="spotlight">Spotlight</option>
             <option value="label">Label</option>
@@ -31,14 +31,14 @@
                 <input
                     type="number"
                     min=0
-                    max={selectedAnnotation.endTime - 1}
-                    bind:value={selectedAnnotation.startTime}>
+                    max={selectedAnnotationItem.annotation.timeEnd - 1}
+                    bind:value={selectedAnnotationItem.annotation.timeStart}>
             </div>
             <div>
                 <span class="end-time">End Time</span>
                 <input
                     type="number"
-                    bind:value={selectedAnnotation.endTime}>
+                    bind:value={selectedAnnotationItem.annotation.timeEnd}>
             </div>
         </div>
 
@@ -47,15 +47,16 @@
             name="annotation-text"
             id=""
             rows=6
-            bind:value={selectedAnnotation.title} />
-        {:else}
-        <span class="placeholder">Select an annotation...</span>
-        {/if}
+            bind:value={selectedAnnotationItem.annotation.text} />
+        <!-- {:else}
+        <span class="placeholder">Select an annotation...</span> -->
+        <!-- {/if} -->
     </div>
     <!-- <div id="footer">
         <button>Save</button>
     </div> -->
 </div>
+{/if}
 
 <style>
     #properties-panel {

@@ -2,10 +2,12 @@
 	import svelteLogo from './assets/svelte.svg'
   	import VideoControls from './lib/VideoControls.svelte';
 	import Editor from './lib/Editor.svelte';
+
+	import annotationFile from "./annotations.xml?raw";
 </script>
 
 <main>
-	<Editor />
+	<Editor {annotationFile} />
 	<!-- <VideoControls /> -->
 </main>
 

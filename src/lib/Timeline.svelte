@@ -1,12 +1,13 @@
 <script lang="ts">
-    import type { IAnnotation } from "./Annotation.svelte";
+    import type { AnnotationTrackItem } from "./Annotation.svelte";
+    import AnnotationTracks from "./AnnotationTracks.svelte";
 
     export let videoDuration: number;
     export let pixelsPerSecond: number;
+    export let timeStep: number = 1;
     export let currentTime: number = 0;
-    export let annotations: Array<IAnnotation>;
+    export let annotationItems: AnnotationTrackItem[];
 
-    import AnnotationTrack from "./AnnotationTrack.svelte";
     import TimeDisplay from "./TimeDisplay.svelte";
 
     import { createEventDispatcher } from 'svelte';
@@ -14,22 +15,69 @@
 
     $: currentTimeTickX = `${currentTime * pixelsPerSecond}px`;
 
+    const annotationTracks = fitAnnotationsIntoTracks(annotationItems);
+    console.log(annotationTracks);
+
     function handleClick(e) {
+        if (e.target.closest("#time-display")) {
+            return;
+        }
+
         dispatch("timelineClick", {
             target: e.target
         });
     }
 
-    // setInterval(() => {
-    //     currentTime += 1;
-    // }, 1000);
+    function fitAnnotationsIntoTracks(
+        items: AnnotationTrackItem[]
+    ): [AnnotationTrackItem[]?] {
+        const result: [AnnotationTrackItem[]?] = [];
+
+        for (const item of items) {
+            fitAnnotationIntoTrack(item, result, 0);
+        }
+
+        return result;
+    }
+
+    function fitAnnotationIntoTrack(
+        item: AnnotationTrackItem,
+        tracks: [AnnotationTrackItem[]?],
+        startTrackIndex: number
+    ) {
+        // If the row doesn't have an annotation in it yet, create
+		// a row at the starting index
+		if (!tracks[startTrackIndex]) {
+			tracks[startTrackIndex] = [];
+		}
+		// Compare the annotation to the last column in the current row
+        const previousTrack = tracks[startTrackIndex];
+		const prev = previousTrack.at(-1);
+
+		if (!prev) {
+			tracks[startTrackIndex].push(item);
+            item.track = startTrackIndex;
+		}
+		else if (item.annotation.timeStart <= prev.annotation.timeEnd) {
+			fitAnnotationIntoTrack(item, tracks, startTrackIndex + 1)
+		}
+		else if (item.annotation.timeStart > prev.annotation.timeEnd) {
+			tracks[startTrackIndex].push(item)
+            item.track = startTrackIndex;
+		}
+    }
 </script>
 
 
 <div id="timeline" on:click={handleClick} on:keyup={handleClick}>
     <div id="current-time" style:left={currentTimeTickX}></div>
-    <TimeDisplay {pixelsPerSecond} {videoDuration} />
-    <AnnotationTrack {pixelsPerSecond} {annotations} on:annotationClick />
+    <TimeDisplay {pixelsPerSecond} {videoDuration} step={timeStep} />
+
+    <AnnotationTracks
+        {pixelsPerSecond}
+        annotationItems={annotationItems}
+        on:annotationClick
+        on:annotationSizeChange />
 </div>
 
 <style>

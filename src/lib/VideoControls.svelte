@@ -4,6 +4,7 @@
     export let currentTime: number = 0;
 
     import { createEventDispatcher } from 'svelte';
+    import { formatSeconds } from './common';
 
     import playIcon from "../assets/play.svg";
     import pauseIcon from "../assets/pause.svg";
@@ -27,15 +28,17 @@
         <img src={stopIcon} on:click={() => dispatch("stop")} alt="Stop Icon">
     </div>
 
+    <span id="current-time">{formatSeconds(currentTime)}</span>
     <div id="slider-container">
         <input
             id="time-slider"
             type="range"
-            value={currentTime}
+            bind:value={currentTime}
             max={videoDuration - 1}
             step={0.000001}
         >
     </div>
+    <span id="video-duration">{formatSeconds(videoDuration)}</span>
 </div>
 
 <style>
@@ -72,6 +75,11 @@
         display: flex;
         width: 100%;
         padding-right: 1rem;
+    }
+
+    #current-time,
+    #video-duration {
+        align-self: center;
     }
 
     #time-slider {

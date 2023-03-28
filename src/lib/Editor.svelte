@@ -1,14 +1,22 @@
 <!-- svelte-ignore a11y-media-has-caption -->
 
 <script lang="ts">
+    import { onMount } from "svelte";
     import Timeline from "./Timeline.svelte";
     import PropertiesPanel from "./PropertiesPanel.svelte";
     import VideoControls from "./VideoControls.svelte";
-    import { AnnotationType, type IAnnotation } from "./Annotation.svelte";
+    import type { AnnotationTrackItem } from "./Annotation.svelte";
+
+    import { parseFromXml } from "../annotationlib/parser";
+    import AnnotationRenderer from "../annotationlib/renderer";
+    import "../annotationlib/renderer/index.css";
 
     import videoSource from "../assets/video.mp4";
 
+    export let annotationFile: string;
+
     let video: HTMLVideoElement;
+    let videoContainer: HTMLDivElement;
 
     let paused: boolean;
     let videoDuration: number;
@@ -17,14 +25,33 @@
     let currentTime: number;
 
     const zoom = 1;
-    const pixelsPerSecond = 80 * zoom;
+    const pixelsPerSecond = 20 * zoom;
 
-    let annotations: IAnnotation[] = [
-        {type: AnnotationType.Label, title: "First", selected: false, startTime: 0, endTime: 4},
-        {type: AnnotationType.Speech, title: "Test speech", selected: false, startTime: 5, endTime: 7}
-    ];
+    const annotations = parseFromXml(annotationFile);
 
-    $: console.log("Aannotations: " + annotations);
+    onMount(() => {
+        const renderer = new AnnotationRenderer(annotations, videoContainer, {
+            getVideoTime() {
+                return video.currentTime;
+            },
+            seekTo(seconds) {
+                video.currentTime = seconds;
+            },
+            getOriginalVideoWidth() {
+                return video.videoWidth;
+            },
+            getOriginalVideoHeight() {
+                return video.videoHeight;
+            }
+        });
+        renderer.start();
+    });
+
+
+    let annotationItems: AnnotationTrackItem[] = annotations.map(annotation => {
+        return { annotation, selected: false, track: 0 }
+    });
+    console.log(annotationItems);
 
     function stopVideo() {
         video.pause();
@@ -32,35 +59,35 @@
     }
 
     function selectAnnotation(index: number): void {
-        const currentSelected = annotations.findIndex((el) => {
+        const currentSelected = annotationItems.findIndex((el) => {
             return el?.selected === true;
         });
 
         if (currentSelected !== -1) {
-            annotations[currentSelected].selected = false;
+            annotationItems[currentSelected].selected = false;
         }
 
-        annotations[index].selected = true;
-        annotations = annotations;
+        annotationItems[index].selected = true;
     }
 
     function handleTimelineClick(target) {
         if (!target.closest(".annotation")) {
-            const currentSelected = annotations.findIndex((el) => {
+            const currentSelected = annotationItems.findIndex((el) => {
                 return el?.selected === true;
             });
 
             if (currentSelected !== -1) {
-                annotations[currentSelected].selected = false;
+                annotationItems[currentSelected].selected = false;
             }
         }
     }
 </script>
 
 <div id="editor">
+    <!-- {annotationFile} -->
     <div id="top">
         <div id="container">
-            <div id="video-container">
+            <div id="video-container" bind:this={videoContainer}>
                 <video
                     src={videoSource}
                     on:click={() => video.paused ? video.play() : video.pause()}
@@ -72,19 +99,20 @@
             </div>
             <Timeline
                 {pixelsPerSecond}
-                bind:annotations
+                bind:annotationItems
                 videoDuration={videoDuration}
                 currentTime={currentTime}
+                timeStep={3}
 
-                on:timelineClick={(e) => handleTimelineClick(e.detail.target)}
-                on:annotationClick={(e) => selectAnnotation(e.detail.index)}
+                on:timelineClick={e => handleTimelineClick(e.detail.target)}
+                on:annotationClick={e => selectAnnotation(e.detail.index)}
             />
         </div>
-        <PropertiesPanel bind:annotations />
+        <PropertiesPanel bind:annotationItems />
     </div>
     <VideoControls
         paused={paused}
-        currentTime={currentTime}
+        bind:currentTime={currentTime}
         videoDuration={videoDuration}
         on:play={() => video.play()}
         on:pause={() => video.pause()}
@@ -113,19 +141,27 @@
     #container {
         display: grid;
 
-        grid-template-rows: 1fr 0.5fr;
         width: 100%;
         overflow: hidden;
+
+        --video-width: 700px;
+        --video-height: calc(var(--video-width) * 0.5625)
     }
 
     #video-container {
-        overflow:hidden;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        max-width: var(--video-width);
+        min-width: var(--video-width);
+        min-height: var(--video-height);
+        max-height: var(--video-height);
+        justify-self: center;
     }
 
     video {
-        padding: 1rem;
-        width: 100%;
-        max-height: 100%;
+        width: var(--video-width);
+        height: var(--video-height);
     }
 
 </style>
