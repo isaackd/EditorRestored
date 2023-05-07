@@ -20,6 +20,7 @@
 
     let paused: boolean;
     let videoDuration: number;
+    let renderer: AnnotationRenderer;
 
     $: videoDuration = Math.ceil(videoDuration);
     let currentTime: number;
@@ -27,20 +28,21 @@
     const zoom = 1;
     const pixelsPerSecond = 20 * zoom;
 
-    const annotations = parseFromXml(annotationFile);
+    // const annotations = parseFromXml(annotationFile);
+    const annotations = [];
 
     onMount(() => {
-        const renderer = new AnnotationRenderer(annotations, videoContainer, {
-            getVideoTime() {
+        renderer = new AnnotationRenderer(annotations, videoContainer, {
+            getVideoTime: () => {
                 return video.currentTime;
             },
-            seekTo(seconds) {
+            seekTo: (seconds: number) => {
                 video.currentTime = seconds;
             },
-            getOriginalVideoWidth() {
+            getOriginalVideoWidth: () => {
                 return video.videoWidth;
             },
-            getOriginalVideoHeight() {
+            getOriginalVideoHeight: () => {
                 return video.videoHeight;
             }
         });
@@ -108,7 +110,7 @@
                 on:annotationClick={e => selectAnnotation(e.detail.index)}
             />
         </div>
-        <PropertiesPanel bind:annotationItems />
+        <PropertiesPanel bind:annotationItems renderer={renderer} />
     </div>
     <VideoControls
         paused={paused}
