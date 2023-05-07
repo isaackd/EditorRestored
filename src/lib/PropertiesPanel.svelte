@@ -16,7 +16,9 @@
         let annotationData = annotationItems.map(item => {
             return item.annotation;
         });
-        renderer.changeAnnotationData(annotationData);
+        if (renderer) {
+            renderer.changeAnnotationData(annotationData);
+        }
 		if (selectedAnnotationItem) {
             document.querySelector(".selected").scrollIntoView();
         }

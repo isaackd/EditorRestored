@@ -28,8 +28,8 @@
     const zoom = 1;
     const pixelsPerSecond = 20 * zoom;
 
-    // const annotations = parseFromXml(annotationFile);
-    const annotations = [];
+    const annotations = parseFromXml(annotationFile);
+    // const annotations = [];
 
     onMount(() => {
         renderer = new AnnotationRenderer(annotations, videoContainer, {
